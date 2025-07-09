@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Supabase Auth</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef1f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+    h2 { text-align: center; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.3rem; }
+    .form-group input { width: 100%; padding: 0.7rem; border: 1px solid #ccc; border-radius: 5px; }
+    .form-group img { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; display: none; margin-top: 5px; }
+    .btn { width: 100%; padding: 0.8rem; background-color: #28a745; color: white; border: none; font-weight: bold; font-size: 1rem; border-radius: 5px; cursor: pointer; }
+    .switch-mode, .forgot-password { text-align: center; margin-top: 1rem; color: #007bff; cursor: pointer; }
+    .error { color: red; margin-bottom: 1rem; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2 id="form-title">Sign Up</h2>
+
+  <div class="form-group" id="img-group">
+    <label>Profile Image</label>
+    <input type="file" id="profile-image" accept="image/*" onchange="previewImage(event)">
+    <img id="preview" src="">
+  </div>
+
+  <div class="form-group" id="first-name-group">
+    <label>First Name</label>
+    <input type="text" id="first-name">
+  </div>
+  <div class="form-group" id="middle-name-group">
+    <label>Middle Name</label>
+    <input type="text" id="middle-name">
+  </div>
+  <div class="form-group" id="surname-group">
+    <label>Surname</label>
+    <input type="text" id="surname">
+  </div>
+
+  <div class="form-group">
+    <label>Email</label>
+    <input type="email" id="email">
+  </div>
+
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" id="password">
+  </div>
+
+  <div class="form-group" id="confirm-password-group">
+    <label>Confirm Password</label>
+    <input type="password" id="confirm-password">
+  </div>
+
+  <div class="forgot-password" id="forgot-password" style="display:none;" onclick="forgotPassword()">Forgot Password?</div>
+
+  <div class="error" id="error-msg"></div>
+
+  <button class="btn" onclick="handleSubmit()">Sign Up</button>
+
+  <div class="switch-mode" onclick="toggleMode()">Already have an account? Login</div>
+</div>
+
+<script>
+  const supabase = supabase.createClient('https://pspfdfroxdutkynorblk.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcGZkZnJveGR1dGt5bm9yYmxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwMDIxOTgsImV4cCI6MjA2NzU3ODE5OH0.7r49cxGhj6Y2oBOb9AEuhbH9jHmG6UoY5jFpz0UXQzw');
+  let isLogin = false;
+
+  function toggleMode() {
+    isLogin = !isLogin;
+    document.getElementById('form-title').innerText = isLogin ? 'Login' : 'Sign Up';
+    document.getElementById('img-group').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('first-name-group').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('middle-name-group').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('surname-group').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('confirm-password-group').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('forgot-password').style.display = isLogin ? 'block' : 'none';
+    document.querySelector('.btn').innerText = isLogin ? 'Login' : 'Sign Up';
+    document.querySelector('.switch-mode').innerText = isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login";
+    document.getElementById('error-msg').innerText = '';
+  }
+
+  function previewImage(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('preview');
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+  }
+
+  async function forgotPassword() {
+    const email = document.getElementById('email').value;
+    if (!email) return alert("Enter email to reset password");
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    alert(error ? error.message : "Reset link sent to email.");
+  }
+
+  async function handleSubmit() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm-password').value;
+    const errorBox = document.getElementById('error-msg');
+
+    if (!email || !password) return errorBox.innerText = "Email & password required";
+
+    if (!isLogin) {
+      if (password !== confirm) return errorBox.innerText = "Passwords do not match";
+      const image = document.getElementById('profile-image').files[0];
+      if (!image) return errorBox.innerText = "Profile image is required";
+
+      const first = document.getElementById('first-name').value.trim();
+      const middle = document.getElementById('middle-name').value.trim();
+      const surname = document.getElementById('surname').value.trim();
+      if (!first || !surname) return errorBox.innerText = "Full name required";
+
+      // Sign Up
+      const { data: signUpData, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { first_name: first, middle_name: middle, surname }
+        }
+      });
+
+      if (error) return errorBox.innerText = error.message;
+
+      const userId = signUpData.user.id;
+      const fileExt = image.name.split('.').pop();
+      const filePath = `${userId}/avatar.${fileExt}`;
+      await supabase.storage.from('avatars').upload(filePath, image, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+      await supabase.auth.updateUser({
+        data: { avatar_url: filePath }
+      });
+
+      errorBox.className = "success";
+      errorBox.innerText = "Signed up successfully! Please check your email.";
+    } else {
+      // Login
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      errorBox.className = error ? "error" : "success";
+      errorBox.innerText = error ? error.message : "Logged in!";
+    }
+  }
+</script>
+</body>
+</html>
