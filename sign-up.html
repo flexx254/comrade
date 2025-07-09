@@ -134,26 +134,26 @@
 
       // Sign Up
       const { data: signUpData, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { first_name: first, middle_name: middle, surname }
-        }
-      });
+  email,
+  password,
+  options: {
+    data: { first_name: first, middle_name: middle, surname }
+  }
+});
 
-      if (error) {
+if (error) {
   errorBox.className = "error";
   errorBox.innerText = error.message;
   return;
-      }
+}
 
-      const userId = signUpData.user?.id;
+const userId = signUpData.user?.id;
 
 if (!userId) {
   errorBox.className = "success";
   errorBox.innerText = "Signed up! Please check your email to confirm before uploading image.";
   return;
-}
+      }
       const fileExt = image.name.split('.').pop();
       const filePath = `${userId}/avatar.${fileExt}`;
       await supabase.storage.from('avatars').upload(filePath, image, {
