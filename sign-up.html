@@ -141,7 +141,11 @@
         }
       });
 
-      if (error) return errorBox.innerText = error.message;
+      if (error) {
+  errorBox.className = "error";
+  errorBox.innerText = error.message;
+  return;
+      }
 
       const userId = signUpData.user?.id;
 
