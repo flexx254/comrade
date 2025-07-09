@@ -143,7 +143,13 @@
 
       if (error) return errorBox.innerText = error.message;
 
-      const userId = signUpData.user.id;
+      const userId = signUpData.user?.id;
+
+if (!userId) {
+  errorBox.className = "success";
+  errorBox.innerText = "Signed up! Please check your email to confirm before uploading image.";
+  return;
+}
       const fileExt = image.name.split('.').pop();
       const filePath = `${userId}/avatar.${fileExt}`;
       await supabase.storage.from('avatars').upload(filePath, image, {
